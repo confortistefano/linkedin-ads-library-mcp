@@ -166,6 +166,10 @@ npm run build                                    # Compile TypeScript
 LINKEDIN_ACCESS_TOKEN=your-token npm start       # Production
 ```
 
+## Disclaimer
+
+This is an unofficial, community-built tool. Not affiliated with or endorsed by LinkedIn. Users are responsible for complying with [LinkedIn's API Terms of Use](https://www.linkedin.com/legal/l/api-terms-of-use) and must provide their own Developer App credentials.
+
 ## License
 
 MIT
