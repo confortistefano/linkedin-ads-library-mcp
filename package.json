@@ -9,12 +9,19 @@
     "build": "tsc",
     "start": "node dist/index.js"
   },
-  "keywords": ["mcp", "linkedin", "ad-library", "ads", "competitive-intelligence"],
+  "keywords": [
+    "mcp",
+    "linkedin",
+    "ad-library",
+    "ads",
+    "competitive-intelligence"
+  ],
   "author": "Stefano Conforti",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.5.2",
     "zod": "^4.3.6"
   },
   "devDependencies": {

@@ -32,21 +32,21 @@ export class LinkedInAdsClient {
     const responseBody = await response.text();
 
     if (!response.ok) {
-      let errorMessage = `LinkedIn API error ${response.status}: ${response.statusText}`;
+      // Log full details server-side for debugging
+      let debugMessage = `LinkedIn API error ${response.status}: ${response.statusText}`;
       try {
         const errorJson = JSON.parse(responseBody);
-        if (errorJson.message) {
-          errorMessage = `LinkedIn API error ${response.status}: ${errorJson.message}`;
-        }
-        if (errorJson.errorDetails) {
-          errorMessage += `\nDetails: ${JSON.stringify(errorJson.errorDetails, null, 2)}`;
-        }
+        if (errorJson.message) debugMessage += ` — ${errorJson.message}`;
+        if (errorJson.errorDetails) debugMessage += `\n${JSON.stringify(errorJson.errorDetails)}`;
       } catch {
-        if (responseBody) {
-          errorMessage += `\n${responseBody}`;
-        }
+        if (responseBody) debugMessage += `\n${responseBody}`;
       }
-      throw new Error(errorMessage);
+      console.error(debugMessage);
+
+      // Return sanitized error to client
+      throw new Error(
+        `LinkedIn API returned ${response.status}. Check server logs for details.`
+      );
     }
 
     if (!responseBody) {

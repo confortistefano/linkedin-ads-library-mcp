@@ -6,8 +6,8 @@ export async function handleSearchPaidEndorsements(
 ) {
   const result = await client.searchPaidEndorsements(
     args.keyword,
-    args.start,
-    args.count
+    args.start ?? 0,
+    args.count ?? 25
   );
 
   return {
@@ -16,8 +16,10 @@ export async function handleSearchPaidEndorsements(
         type: "text" as const,
         text: JSON.stringify(
           {
-            total: result.paging.total,
-            returned: result.elements.length,
+            summary: {
+              total: result.paging.total,
+              returned: result.elements.length,
+            },
             posts: result.elements.map((el) => ({
               postUrl: el.postUrl,
             })),

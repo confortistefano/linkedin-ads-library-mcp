@@ -4,7 +4,23 @@ export async function handleSearchJobs(
   client: LinkedInAdsClient,
   args: { keyword: string; start?: number; count?: number }
 ) {
-  const result = await client.searchJobs(args.keyword, args.start, args.count);
+  const result = await client.searchJobs(
+    args.keyword,
+    args.start ?? 0,
+    args.count ?? 25
+  );
+
+  // Build summary
+  const orgs = new Map<string, number>();
+  for (const el of result.elements) {
+    const name = el.jobDetails?.organizationName;
+    if (name) orgs.set(name, (orgs.get(name) || 0) + 1);
+  }
+
+  const topOrganizations = [...orgs.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([name, count]) => ({ name, jobs: count }));
 
   return {
     content: [
@@ -12,8 +28,11 @@ export async function handleSearchJobs(
         type: "text" as const,
         text: JSON.stringify(
           {
-            total: result.paging.total,
-            returned: result.elements.length,
+            summary: {
+              total: result.paging.total,
+              returned: result.elements.length,
+              topOrganizations,
+            },
             jobs: result.elements.map((el) => ({
               jobPostingUrl: el.jobPostingUrl,
               title: el.jobDetails?.jobTitle,

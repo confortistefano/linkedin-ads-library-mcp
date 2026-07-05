@@ -1,52 +1,81 @@
 # LinkedIn Ad Library MCP Server
 
-An MCP (Model Context Protocol) server that provides access to LinkedIn's Ad Library API. Search ads, sponsored jobs, and paid endorsement posts from any advertiser on LinkedIn.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Node](https://img.shields.io/badge/Node.js-22+-green.svg)](https://nodejs.org)
+[![MCP](https://img.shields.io/badge/MCP-Compatible-purple.svg)](https://modelcontextprotocol.io)
 
-Built for competitive intelligence, ad research, and B2B marketing analysis.
+An MCP server that connects AI assistants to LinkedIn's Ad Library API. Search any advertiser's sponsored content, job postings, and influencer partnerships — directly from Claude or any MCP-compatible client.
+
+## Use Cases
+
+**Competitor Ad Analysis** — See what ads your competitors are running, where they're targeting, and how much reach they're getting. Compare messaging strategies across markets.
+
+**Creative Benchmarking** — Discover which ad formats (video, image, document, carousel) competitors use most. Analyze copy patterns and CTAs across your industry.
+
+**Hiring Signal Tracking** — Monitor sponsored job postings to spot competitors scaling teams, entering new markets, or launching new products based on the roles they're hiring for.
+
+**Influencer & Thought Leader Discovery** — Find which brands are running thought leader ads (paid endorsements) and identify creator partnerships in your space.
 
 ## Tools
 
-| Tool | Description | Data returned |
-|------|-------------|---------------|
-| `search_ads` | Search the LinkedIn Ad Library | Advertiser, ad type, impressions, country distribution, targeting |
-| `search_jobs` | Search sponsored job postings | Job title, organization, location, payer, description |
-| `search_paid_endorsements` | Search paid creator/influencer posts | Post URLs |
+| Tool | What it does |
+|------|-------------|
+| `search_ads` | Search sponsored ads — returns advertiser, ad type, impressions, country distribution, targeting |
+| `search_jobs` | Search sponsored job postings — returns title, organization, location, description |
+| `search_paid_endorsements` | Search thought leader ads — returns post URLs |
+
+## Example Prompts
+
+Once connected, try asking your AI assistant:
+
+```
+"Show me all LinkedIn ads mentioning Klarna in the last month"
+
+"Compare the ad targeting strategy of Stripe vs Adyen in Europe"
+
+"What job roles is Revolut sponsoring on LinkedIn right now?"
+
+"Find thought leader ads in the BNPL space"
+
+"Analyze the top 50 fintech ads by impression volume and summarize the messaging patterns"
+
+"Which countries is PayPal targeting with their LinkedIn campaigns?"
+```
 
 ## Prerequisites
 
 1. A [LinkedIn Developer App](https://www.linkedin.com/developers/apps) with the **Ad Library** product enabled
-2. A valid LinkedIn OAuth access token (expires every 60 days)
+2. A LinkedIn OAuth access token (expires every 60 days)
 
-### Getting an access token
+### Getting Your Access Token
 
-**Option A: Token Generator (fastest)**
+**Fastest way** — use LinkedIn's built-in token generator:
 
 1. Go to [LinkedIn Token Generator](https://www.linkedin.com/developers/tools/oauth/token-generator)
 2. Select your app
-3. Select any available scope (e.g., `openid`)
+3. Select any scope (e.g., `openid`)
 4. Click **Request access token**
 5. Copy the token
 
-**Option B: Manual OAuth flow**
+**Alternative** — manual OAuth flow:
 
-1. Add a redirect URI in your app's **Auth** tab (e.g., `https://oauth.pstmn.io/v1/callback` for Postman)
-2. Open in browser:
+1. Add a redirect URI in your app's **Auth** tab
+2. Visit:
    ```
-   https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id={YOUR_CLIENT_ID}&redirect_uri={YOUR_REDIRECT_URI}&state=random123&scope=openid
+   https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=YOUR_CLIENT_ID&redirect_uri=YOUR_REDIRECT_URI&scope=openid&state=random123
    ```
-3. Authorize and copy the `code` from the redirect URL
-4. Exchange for a token:
+3. Authorize → copy the `code` parameter from the redirect
+4. Exchange it:
    ```bash
-   curl -X POST 'https://www.linkedin.com/oauth/v2/accessToken' \
-     -H 'Content-Type: application/x-www-form-urlencoded' \
-     -d 'grant_type=authorization_code' \
-     -d 'code={AUTH_CODE}' \
-     -d 'client_id={YOUR_CLIENT_ID}' \
-     -d 'client_secret={YOUR_CLIENT_SECRET}' \
-     -d 'redirect_uri={YOUR_REDIRECT_URI}'
+   curl -X POST https://www.linkedin.com/oauth/v2/accessToken \
+     -d grant_type=authorization_code \
+     -d code=AUTH_CODE \
+     -d client_id=YOUR_CLIENT_ID \
+     -d client_secret=YOUR_SECRET \
+     -d redirect_uri=YOUR_REDIRECT_URI
    ```
 
-## Installation
+## Setup
 
 ```bash
 git clone https://github.com/confortistefano/linkedin-ads-library-mcp.git
@@ -55,11 +84,9 @@ npm install
 npm run build
 ```
 
-## Configuration
+### Connect to Claude Code
 
-### Claude Code
-
-Add to your MCP settings:
+Add to your MCP settings (`.claude/settings.json` or project settings):
 
 ```json
 {
@@ -75,9 +102,9 @@ Add to your MCP settings:
 }
 ```
 
-### Claude Desktop
+### Connect to Claude Desktop
 
-Add to `claude_desktop_config.json`:
+Add to your `claude_desktop_config.json`:
 
 ```json
 {
@@ -96,58 +123,47 @@ Add to `claude_desktop_config.json`:
 ### Docker
 
 ```bash
-echo "LINKEDIN_ACCESS_TOKEN=your-token-here" > .env
+echo "LINKEDIN_ACCESS_TOKEN=your-token" > .env
 docker compose up -d
 ```
 
-The server will be available at `http://localhost:3001/mcp`.
+Server available at `http://localhost:3001/mcp`.
 
-## Usage examples
+## API Reference
 
-Once connected, you can ask your AI assistant:
+This server wraps LinkedIn's Ad Library API (version 202503):
 
-- "Search LinkedIn ads for Klarna"
-- "Find all sponsored job postings from PayPal"
-- "Show me paid endorsement posts mentioning Stripe"
-- "Compare ad targeting between Klarna and Afterpay"
-- "What countries is Revolut running LinkedIn ads in?"
+| Endpoint | Method | Tool |
+|----------|--------|------|
+| `/rest/adLibrary` | FINDER `q=criteria` | `search_ads` |
+| `/rest/jobLibrary` | FINDER `q=criteria` | `search_jobs` |
+| `/rest/paidEndorsementPosts` | FINDER `q=searchCriteria` | `search_paid_endorsements` |
 
-## API details
+### Rate Limits
 
-This server wraps LinkedIn's Ad Library API (version 202503) with three endpoints:
+LinkedIn doesn't publish specific rate limits. What we know:
 
-| Endpoint | Finder | Method |
-|----------|--------|--------|
-| `/rest/adLibrary` | `q=criteria` | FINDER |
-| `/rest/jobLibrary` | `q=criteria` | FINDER |
-| `/rest/paidEndorsementPosts` | `q=searchCriteria` | FINDER |
+- Limits are **per-app, per-day**, reset at **midnight UTC**
+- HTTP **429** = limit reached, wait until reset
+- Email alert at **75%** usage
+- Check your limits: [Developer Portal](https://www.linkedin.com/developers/apps) → your app → Analytics tab
 
-All endpoints use the `keyword` parameter for search and support `start`/`count` for pagination.
+### Environment Variables
 
-### Rate limits
-
-LinkedIn does not publish specific rate limits for these endpoints. What we know:
-
-- Limits are **per-app, per-day** and reset at **midnight UTC**
-- Exceeding the limit returns HTTP **429**
-- You'll get an email alert at **75% usage**
-- Check your actual limits in the [Developer Portal Analytics tab](https://www.linkedin.com/developers/apps) after making at least one request
-
-### Authentication
-
-The API requires **Application (3-legged) OAuth** tokens. No specific OAuth scopes are required for Ad Library endpoints. Tokens expire after **60 days**.
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LINKEDIN_ACCESS_TOKEN` | required | OAuth access token |
+| `MCP_TRANSPORT` | `stdio` | Transport mode: `stdio` or `http` |
+| `MCP_PORT` | `3000` | HTTP server port |
+| `HOST` | `127.0.0.1` | HTTP server bind address |
+| `RATE_LIMIT` | `100` | Max requests per minute (HTTP mode) |
 
 ## Development
 
 ```bash
-# Run in dev mode (with hot reload)
-LINKEDIN_ACCESS_TOKEN=your-token npm run dev
-
-# Build
-npm run build
-
-# Run production
-LINKEDIN_ACCESS_TOKEN=your-token npm start
+LINKEDIN_ACCESS_TOKEN=your-token npm run dev    # Dev mode with hot reload
+npm run build                                    # Compile TypeScript
+LINKEDIN_ACCESS_TOKEN=your-token npm start       # Production
 ```
 
 ## License

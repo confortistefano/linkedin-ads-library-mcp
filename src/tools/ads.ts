@@ -4,7 +4,31 @@ export async function handleSearchAds(
   client: LinkedInAdsClient,
   args: { keyword: string; start?: number; count?: number }
 ) {
-  const result = await client.searchAds(args.keyword, args.start, args.count);
+  const result = await client.searchAds(
+    args.keyword,
+    args.start ?? 0,
+    args.count ?? 25
+  );
+
+  // Build summary
+  const ads = result.elements.filter((el) => !el.isRestricted);
+  const advertisers = new Map<string, number>();
+  let earliestDate: number | null = null;
+  let latestDate: number | null = null;
+
+  for (const el of ads) {
+    const name = el.details.advertiser?.advertiserName;
+    if (name) advertisers.set(name, (advertisers.get(name) || 0) + 1);
+    const first = el.details.adStatistics?.firstImpressionAt;
+    const last = el.details.adStatistics?.latestImpressionAt;
+    if (first && (!earliestDate || first < earliestDate)) earliestDate = first;
+    if (last && (!latestDate || last > latestDate)) latestDate = last;
+  }
+
+  const topAdvertisers = [...advertisers.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([name, count]) => ({ name, ads: count }));
 
   return {
     content: [
@@ -12,8 +36,15 @@ export async function handleSearchAds(
         type: "text" as const,
         text: JSON.stringify(
           {
-            total: result.paging.total,
-            returned: result.elements.length,
+            summary: {
+              total: result.paging.total,
+              returned: result.elements.length,
+              dateRange: {
+                earliest: earliestDate ? new Date(earliestDate).toISOString().split("T")[0] : null,
+                latest: latestDate ? new Date(latestDate).toISOString().split("T")[0] : null,
+              },
+              topAdvertisers,
+            },
             ads: result.elements.map((el) => ({
               adUrl: el.adUrl,
               isRestricted: el.isRestricted,
